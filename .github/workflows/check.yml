@@ -1,0 +1,40 @@
+name: check
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+    - cron: '22 1 * * *'
+    - cron: '52 0 * * 1'
+  workflow_dispatch:
+concurrency:
+  group: check
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: config
+        env:
+          CONFIG_JSON: ${{ secrets.CONFIG_JSON }}
+        run: printf '%s' "$CONFIG_JSON" > config.json
+      - name: run
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          case "$SCHEDULE" in
+            "22 1 * * *") python3 check.py --watch-until 10:40 --every 20 ;;
+            "52 0 * * 1") python3 check.py --open-watch --until 10:20 --every 10 ;;
+            *)            python3 check.py ;;
+          esac
+      - name: save state
+        run: |
+          rm -f config.json
+          git config user.name bot
+          git config user.email bot@users.noreply.github.com
+          git add state.json
+          if git diff --cached --quiet; then echo "no change"; else
+            git commit -qm "state"; git pull -q --rebase; git push -q; fi

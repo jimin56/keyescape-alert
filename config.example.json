@@ -1,0 +1,87 @@
+{
+  "ntfy_server": "https://ntfy.sh",
+  "ntfy_topic": "your-topic",
+  "weekdays": [
+    4,
+    5,
+    6
+  ],
+  "allow_range": {
+    "4": [
+      "19:50",
+      "20:50"
+    ]
+  },
+  "alert_title": "{label} {date} {time}",
+  "alert_footer": "",
+  "open_title": "{label}: {first}~{last}",
+  "open_body": "",
+  "fail_title": "check failing",
+  "type_defaults": {
+    "tiered-html": {
+      "base": "https://example.com",
+      "page": "https://example.com/items/{item}",
+      "every_minutes": 15,
+      "steps": {
+        "days": {
+          "path": "/api/days",
+          "params": {
+            "id": "{item}",
+            "month": "{month}"
+          }
+        },
+        "times": {
+          "path": "/api/times",
+          "params": {
+            "id": "{item}",
+            "date": "{date_compact}"
+          },
+          "regex": "data-id='(\\d+)' data-time='([^']+)'"
+        },
+        "remain": {
+          "path": "/api/remain",
+          "params": {
+            "id": "{time_id}"
+          },
+          "regex": "left:\\s*([^)]+)\\)",
+          "closed": [
+            "sold out"
+          ]
+        }
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "a",
+      "type": "daily-json",
+      "api": "https://example.com/api/day",
+      "page": "https://example.com/book?g={group}&i={item}",
+      "params": {
+        "date": "{date}",
+        "group": "{group}",
+        "item": "{item}"
+      },
+      "group": 1,
+      "items": [
+        {
+          "name": "A-1",
+          "item": 1,
+          "info": 1
+        },
+        {
+          "name": "A-2",
+          "item": 2,
+          "info": 2
+        }
+      ],
+      "window_days": 7
+    },
+    {
+      "id": "b",
+      "type": "tiered-html",
+      "name": "B",
+      "item": 100
+    }
+  ]
+}
