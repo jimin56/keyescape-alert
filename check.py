@@ -290,18 +290,28 @@ def sources_of(cfg):
 def run(cfg, today=None, notify=True, force_heavy=False):
     today = today or dt.datetime.now(TZ).date()
     state = load_json(STATE_PATH, {"open": {}, "fails": 0, "fail_notified": False})
-    open_now, fetched, errors = {}, set(), []
+    open_now, fetched, errors, new, failed_push = {}, set(), [], {}, set()
     for src in sources_of(cfg):
         kw = {"force": True} if (force_heavy and src["type"] == "tiered-html") else {}
         o, f, e = ADAPTERS[src["type"]](src, cfg, today, state, **kw)
         open_now.update(o)
         fetched |= f
         errors += e
+        # notify per source as soon as it finishes (don't wait for the slower ones)
+        n = {k: v for k, v in o.items() if k not in state["open"]}
+        if n and notify:
+            try:
+                notify_new(cfg, n)
+            except Exception as ex:
+                log.error("push failed: %s", type(ex).__name__)
+                failed_push |= set(n)
+        new.update(n)
 
     kept = {k: v for k, v in state["open"].items()
             if (v["src"], v["date"]) not in fetched and v["date"] >= today.isoformat()}
     merged = {**kept, **open_now}
-    new = {k: v for k, v in open_now.items() if k not in state["open"]}
+    for k in failed_push:  # retry next pass
+        merged.pop(k, None)
 
     if errors and not fetched:
         state["fails"] = state.get("fails", 0) + 1
@@ -314,14 +324,6 @@ def run(cfg, today=None, notify=True, force_heavy=False):
     for e in errors:
         log.warning("fetch failed: %s", e)
     log.info("pass %s | pairs %d | open %d | new %d", today, len(fetched), len(merged), len(new))
-
-    if new and notify:
-        try:
-            notify_new(cfg, new)
-        except Exception as e:
-            log.error("push failed: %s", type(e).__name__)
-            for k in new:
-                merged.pop(k, None)
 
     state["open"] = merged
     save_json(STATE_PATH, state)
@@ -377,7 +379,8 @@ def open_watch(cfg, until_hhmm, every, post_factory=None, max_minutes=40):
                 new_dates = sorted(d for d in dates if d > baseline[sid])
                 log.info("%s: range extended (%d new dates)", sid, len(new_dates))
                 ntfy(cfg, tmpl.format(label=src["name"], first=fmt_date(new_dates[0]), last=fmt_date(new_dates[-1])),
-                     cfg.get("open_body", ""), click=src["page"].format(item=src["item"]), priority=5, tags=["rotating_light"])
+                     cfg.get("open_body", ""), click=cfg.get("open_click") or src["page"].format(item=src["item"]),
+                     priority=5, tags=["rotating_light"])
                 baseline[sid] = maxd
                 run(cfg, force_heavy=True)
                 time.sleep(60)
