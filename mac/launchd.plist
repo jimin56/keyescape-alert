@@ -5,10 +5,9 @@
   <key>Label</key><string>local.nudge</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/opt/homebrew/bin/python3</string>
-    <string>/Users/me/nudge/check.py</string>
+    <string>/bin/bash</string>
+    <string>/Users/me/nudge/mac/run.sh</string>
   </array>
-  <key>WorkingDirectory</key><string>/Users/me/nudge</string>
   <key>StartInterval</key><integer>60</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>/dev/null</string>

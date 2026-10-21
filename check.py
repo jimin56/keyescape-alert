@@ -291,7 +291,10 @@ def run(cfg, today=None, notify=True, force_heavy=False):
     today = today or dt.datetime.now(TZ).date()
     state = load_json(STATE_PATH, {"open": {}, "fails": 0, "fail_notified": False})
     open_now, fetched, errors, new, failed_push = {}, set(), [], {}, set()
+    skip_heavy = os.environ.get("SKIP_HEAVY") == "1"   # e.g. a local runner that leaves heavy sources to CI
     for src in sources_of(cfg):
+        if skip_heavy and src["type"] == "tiered-html":
+            continue
         kw = {"force": True} if (force_heavy and src["type"] == "tiered-html") else {}
         o, f, e = ADAPTERS[src["type"]](src, cfg, today, state, **kw)
         open_now.update(o)
