@@ -310,8 +310,13 @@ def run(cfg, today=None, notify=True, force_heavy=False):
                 failed_push |= set(n)
         new.update(n)
 
+    ids = {s["id"] for s in sources_of(cfg)}
+    for key in ("times", "maxdate"):  # drop leftovers of sources removed from config
+        for sid in [x for x in state.get(key, {}) if x not in ids]:
+            state[key].pop(sid)
     kept = {k: v for k, v in state["open"].items()
-            if (v["src"], v["date"]) not in fetched and v["date"] >= today.isoformat()}
+            if (v["src"], v["date"]) not in fetched and v["date"] >= today.isoformat()
+            and v["src"].split(":")[0] in ids}
     merged = {**kept, **open_now}
     for k in failed_push:  # retry next pass
         merged.pop(k, None)
