@@ -1,13 +1,5 @@
 {
-  "open": {
-    "k:58|2026-10-25|19:40": {
-      "src": "k:58",
-      "label": "FILM BY STEVE",
-      "date": "2026-10-25",
-      "time": "19:40",
-      "click": "https://www.keyescape.com/reservation1.php?zizum_num=18&theme_num=58&theme_info_num=35"
-    }
-  },
+  "open": {},
   "fails": 0,
   "fail_notified": false,
   "maxdate": {
